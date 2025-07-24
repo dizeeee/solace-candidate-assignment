@@ -20,20 +20,24 @@ export default function Home() {
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
+    const lowerCaseSearchTerm = searchTerm.toLowerCase();
 
     console.log("filtering advocates...");
     const filteredAdvocates = advocates.filter((advocate) => {
       return (
-        advocate.firstName.includes(searchTerm) ||
-        advocate.lastName.includes(searchTerm) ||
-        advocate.city.includes(searchTerm) ||
-        advocate.degree.includes(searchTerm) ||
-        advocate.specialties.includes(searchTerm) ||
-        advocate.yearsOfExperience.toString().includes(searchTerm)
+        advocate.firstName.toLowerCase().includes(lowerCaseSearchTerm) ||
+        advocate.lastName.toLowerCase().includes(lowerCaseSearchTerm) ||
+        advocate.city.toLowerCase().includes(lowerCaseSearchTerm) ||
+        advocate.degree.toLowerCase().includes(lowerCaseSearchTerm) ||
+        advocate.specialties.some((s) =>
+          s.toLowerCase().includes(lowerCaseSearchTerm)
+        ) ||
+        advocate.yearsOfExperience.toString().includes(lowerCaseSearchTerm)
       );
     });
 
     setFilteredAdvocates(filteredAdvocates);
+    console.log("filteredAdvocates", filteredAdvocates);
   };
 
   const onClick = () => {
