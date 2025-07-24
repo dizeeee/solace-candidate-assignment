@@ -78,7 +78,6 @@ export default function Home() {
           {filteredAdvocates.map((advocate) => {
             return (
               <tr key={advocate.id}>
-                {/* TODO: make key id once the type is fixed */}
                 <td>{advocate.firstName}</td>
                 <td>{advocate.lastName}</td>
                 <td>{advocate.city}</td>
