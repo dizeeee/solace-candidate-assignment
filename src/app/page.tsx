@@ -1,50 +1,61 @@
 "use client";
 
 import type { Advocate } from "@/db/schema";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+
+const fetchAdvocates = async (
+  search: string = ""
+): Promise<{ data: Advocate[] }> => {
+  const url = search
+    ? `/api/advocates?search=${encodeURIComponent(search)}`
+    : "/api/advocates";
+  const response = await fetch(url);
+  if (!response.ok) throw new Error("Failed to fetch advocates");
+  return response.json();
+};
 
 export default function Home() {
-  const [advocates, setAdvocates] = useState<Advocate[]>([]);
-  const [filteredAdvocates, setFilteredAdvocates] = useState<Advocate[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
+  // Debounce search term
   useEffect(() => {
-    console.log("fetching advocates...");
-    fetch("/api/advocates").then((response) => {
-      response.json().then((jsonResponse) => {
-        setAdvocates(jsonResponse.data);
-        setFilteredAdvocates(jsonResponse.data);
-      });
-    });
-  }, []);
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["advocates", debouncedSearchTerm],
+    queryFn: () => fetchAdvocates(debouncedSearchTerm),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const advocates = data?.data || [];
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const lowerCaseSearchTerm = e.target.value.toLowerCase();
     setSearchTerm(e.target.value);
-
-    console.log("filtering advocates...");
-    const filteredAdvocates = advocates.filter((advocate) => {
-      return (
-        advocate.firstName.toLowerCase().includes(lowerCaseSearchTerm) ||
-        advocate.lastName.toLowerCase().includes(lowerCaseSearchTerm) ||
-        advocate.city.toLowerCase().includes(lowerCaseSearchTerm) ||
-        advocate.degree.toLowerCase().includes(lowerCaseSearchTerm) ||
-        advocate.specialties.some((s) =>
-          s.toLowerCase().includes(lowerCaseSearchTerm)
-        ) ||
-        advocate.yearsOfExperience.toString().includes(lowerCaseSearchTerm)
-      );
-    });
-
-    setFilteredAdvocates(filteredAdvocates);
-    console.log("filteredAdvocates", filteredAdvocates);
   };
 
   const onClick = () => {
-    console.log(advocates);
-    setFilteredAdvocates(advocates);
+    console.log("resetting search");
     setSearchTerm("");
   };
+
+  if (error) {
+    return (
+      <main className="max-w-7xl mx-auto p-6 bg-gray-50 min-h-screen">
+        <div className="p-8 text-center">
+          <p className="text-red-500">
+            Error loading advocates. Please try again.
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="max-w-7xl mx-auto p-6 bg-gray-50 min-h-screen">
@@ -63,14 +74,21 @@ export default function Home() {
             >
               Search Advocates
             </label>
-            <input
-              id="search"
-              type="text"
-              value={searchTerm}
-              onChange={onChange}
-              placeholder="Search by name, city, degree, specialty, or experience..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-solace-primary focus:border-solace-primary transition-colors bg-white"
-            />
+            <div className="relative">
+              <input
+                id="search"
+                type="text"
+                value={searchTerm}
+                onChange={onChange}
+                placeholder="Search by name, city, degree, specialty, or experience..."
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-solace-primary focus:border-solace-primary transition-colors bg-white"
+              />
+              {isLoading && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <div className="animate-spin h-4 w-4 border-2 border-solace-primary border-t-transparent rounded-full"></div>
+                </div>
+              )}
+            </div>
           </div>
           <button
             onClick={onClick}
@@ -80,15 +98,17 @@ export default function Home() {
             Reset Search
           </button>
         </div>
-        {searchTerm && (
-          <p className="mt-3 text-sm text-gray-600">
-            Searching for:{" "}
-            <span className="font-medium text-gray-900">{searchTerm}</span>
-          </p>
-        )}
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        {isLoading && (
+          <div className="bg-blue-50 border-b border-blue-100 px-4 py-2">
+            <div className="flex items-center text-sm text-blue-700">
+              <div className="animate-spin h-3 w-3 border border-blue-600 border-t-transparent rounded-full mr-2"></div>
+              Finding advocates
+            </div>
+          </div>
+        )}
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
@@ -117,7 +137,7 @@ export default function Home() {
               </tr>
             </thead>
             <tbody>
-              {filteredAdvocates.map((advocate, index) => {
+              {advocates.map((advocate, index) => {
                 return (
                   <tr
                     key={advocate.id}
@@ -162,15 +182,17 @@ export default function Home() {
           </table>
         </div>
 
-        {filteredAdvocates.length === 0 && advocates.length > 0 && (
+        {advocates.length === 0 && !isLoading && (
           <div className="p-8 text-center">
             <p className="text-gray-500">
-              No advocates found matching your search.
+              {searchTerm
+                ? "No advocates found matching your search."
+                : "No advocates found."}
             </p>
           </div>
         )}
 
-        {advocates.length === 0 && (
+        {advocates.length === 0 && isLoading && (
           <div className="p-8 text-center">
             <p className="text-gray-500">Loading advocates...</p>
           </div>
