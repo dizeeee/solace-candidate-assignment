@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres
+    image: docker.io/postgres # include docker.io for podman
     restart: always
     environment:
       POSTGRES_USER: postgres
