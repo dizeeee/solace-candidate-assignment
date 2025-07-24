@@ -119,8 +119,8 @@ export default function AdminPage() {
       city: formData.city,
       degree: formData.degree,
       specialties: formData.specialties,
-      yearsOfExperience: parseInt(formData.yearsOfExperience),
-      phoneNumber: parseInt(formData.phoneNumber),
+      yearsOfExperience: Number(formData.yearsOfExperience) || 0,
+      phoneNumber: Number(formData.phoneNumber) || 0,
     });
   };
 
