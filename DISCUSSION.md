@@ -11,3 +11,7 @@ This was a fun take home project to work on. You guys did a great job putting ev
 - Since searching advocates would probably lead to people signing up for your service in the real world, it would be good to add some sort of call to action when a user hovers/expands a row.
 - If advocates are intended to be met in person, it would be good to add some sort of geographic filtering to the search. This could use PostGIS for search, which integrates well with Drizzle.
 - The loading UI could be improved a bit. I currently just display loading text above the results to avoid obstructing the user's view of the table. It would probably be better to display an animation instead.
+
+## Screenshot
+
+![image](image.png)
